@@ -1,1 +1,103 @@
+import org.openqa.selenium.*;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+import java.time.Duration;
+import java.util.List;
+
+public class SimpleOrangeHRMTest {
+
+    public static void main(String[] args) {
+        WebDriver driver = new ChromeDriver();
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        Actions actions = new Actions(driver);
+
+        try {
+            // Step 1: Go to the login page
+            driver.get("https://opensource-demo.orangehrmlive.com/web/index.php/auth/login");
+
+            // Step 2: Login
+            wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("username"))).sendKeys("Admin");
+            driver.findElement(By.name("password")).sendKeys("admin123");
+            driver.findElement(By.tagName("button")).click();
+
+            // Step 3: Wait for dashboard
+            wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//h6[text()='Dashboard']")));
+
+            // Employee list
+            String[][] employees = {
+                {"John", "Doe"},
+                {"Chennai", "Rayudu"},
+                {"Mumbai", "Rohit"},
+                {"Bangalore", "Dinesh"},
+                {"Mumbai", "Surya"}
+            };
+
+            // Step 4: Add all employees
+            for (String[] emp : employees) {
+                // Navigate to PIM
+                WebElement pimMenu = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//span[text()='PIM']")));
+                actions.moveToElement(pimMenu).click().perform();
+
+                // Click Add Employee
+                WebElement addEmployee = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//a[contains(@href, 'pim/addEmployee')]")));
+                addEmployee.click();
+
+                // Enter employee details
+                wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("firstName"))).sendKeys(emp[0]);
+                driver.findElement(By.name("lastName")).sendKeys(emp[1]);
+
+                // Save
+                WebElement saveBtn = driver.findElement(By.xpath("//button[@type='submit']"));
+                saveBtn.click();
+
+                // Wait for confirmation
+                wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//h6[text()='Personal Details']")));
+            }
+
+            // Step 5: Go to Employee List
+            WebElement pimMenu = driver.findElement(By.xpath("//span[text()='PIM']"));
+            pimMenu.click();
+
+            WebElement employeeList = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//a[contains(@href,'viewEmployeeList')]")));
+            employeeList.click();
+
+            // Step 6: Verify employee names
+            for (String[] emp : employees) {
+                String fullName = emp[0] + " " + emp[1];
+                boolean found = false;
+
+                List<WebElement> nameElements = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(
+                        By.xpath("//div[@class='oxd-table-cell oxd-padding-cell'][2]")));
+
+                for (WebElement name : nameElements) {
+                    if (name.getText().equalsIgnoreCase(fullName)) {
+                        System.out.println("Name Verified: " + fullName);
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    System.out.println("Name Not Found: " + fullName);
+                }
+            }
+
+            // Step 7: Log out
+            WebElement userMenu = wait.until(ExpectedConditions.elementToBeClickable(By.className("oxd-userdropdown-name")));
+            userMenu.click();
+            WebElement logout = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//a[text()='Logout']")));
+            logout.click();
+
+            System.out.println("Logged out successfully.");
+
+        } catch (Exception e) {
+            System.out.println("Error occurred: " + e.getMessage());
+        } finally {
+            driver.quit(); // Close browser
+        }
+    }
+}
 
